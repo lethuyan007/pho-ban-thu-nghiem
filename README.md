@@ -1,1 +1,0 @@
-# pho-ban-thu-nghiem

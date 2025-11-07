@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kayako – Phó bản thứ ba</title>
+<style>
+  body {
+    background-color: #000;
+    color: #eee;
+    font-family: 'Courier New', monospace;
+    padding: 20px;
+    line-height: 1.6;
+  }
+  #game {
+    max-width: 650px;
+    margin: auto;
+    background: rgba(20,20,20,0.85);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px #111;
+  }
+  button {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    background: #111;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  button:hover {
+    background: #222;
+    border-color: crimson;
+    color: crimson;
+  }
+  .dead { color: crimson; }
+  .safe { color: lightgreen; }
+  h2 { text-align: center; color: crimson; }
+</style>
+</head>
+<body>
+<div id="game">
+  <h2>📜 Kayako – Phó bản thứ ba</h2>
+  <div id="story"></div>
+  <div id="choices"></div>
+</div>
+
+<script>
+let inventory = { dao: false, manhMoi: false, nhatKi: false, khoa: false };
+let alive = true;
+
+// typing effect
+function typeText(element, text, callback) {
+  let i = 0;
+  element.innerHTML = "";
+  function typing() {
+    if (i < text.length) {
+      element.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(typing, 15);
+    } else if (callback) callback();
+  }
+  typing();
+}
+
+function show(text, choices=[]) {
+  const storyDiv = document.getElementById('story');
+  const choiceDiv = document.getElementById('choices');
+  choiceDiv.innerHTML = '';
+  typeText(storyDiv, text, () => {
+    for (let c of choices) {
+      const btn = document.createElement('button');
+      btn.textContent = c.text;
+      btn.onclick = c.action;
+      choiceDiv.appendChild(btn);
+    }
+  });
+}
+
+// --- MỞ ĐẦU ---
+function start() {
+  inventory = { dao: false, manhMoi: false, nhatKi: false, khoa: false };
+  alive = true;
+  show(`
+  <p>Bạn cùng nhóm học sinh mạo hiểm đến căn nhà bỏ hoang theo lá thư nặc danh...</p>
+  <p>Điện thoại mất sóng. Cánh cửa đóng sầm lại phía sau.</p>
+  <p><b>Nhiệm vụ:</b> Tìm được CỬA và CHÌA để thoát ra khỏi nơi này.</p>
+  `, [
+    { text: "Bắt đầu khám phá", action: map }
+  ]);
+}
+
+// --- BẢN ĐỒ ---
+function map() {
+  show(`<p>Bạn đang ở sảnh chính. Bạn muốn đi đâu?</p>`, [
+    { text: "1. Phòng khách", action: phongKhach },
+    { text: "2. Phòng Kayako", action: phongKayako },
+    { text: "3. Phòng con trai Kayako", action: phongCon },
+    { text: "4. Phòng tắm", action: phongTam },
+    { text: "5. Gác mái", action: gacMai },
+    { text: "6. Bếp", action: bep },
+    { text: "7. Phòng chồng Kayako", action: phongChong },
+  ]);
+}
+
+// --- I. PHÒNG KHÁCH ---
+function phongKhach() {
+  show(`<p>Phòng khách cũ kỹ, nền nhà đầy mảnh bình hoa vỡ. Cửa dính máu bị khóa.</p>`, [
+    { text: "1. Tiến đến xem cánh cửa", action: () => {
+      inventory.manhMoi = true;
+      show(`<p class="safe">Bạn đã tìm thấy <b>CỬA</b>! Hãy tìm chìa khóa để thoát.</p>`, [
+        { text: "Trở lại bản đồ", action: map }
+      ]);
+    }},
+    { text: "2. Nhặt mảnh vỡ phòng thân", action: () => {
+      death("Trong lúc nhặt, bạn bị đứt tay. Máu rơi xuống sàn... Kayako đánh hơi được và bẻ cổ bạn!");
+    }},
+    { text: "3. Đi xung quanh xem xét", action: () => {
+      show(`<p class="safe">Bạn đi quanh phòng, nhưng không phát hiện gì thêm.</p>`, [
+        { text: "Trở lại bản đồ", action: map }
+      ]);
+    }}
+  ]);
+}
+
+// --- II. PHÒNG KAYAKO ---
+function phongKayako() {
+  show(`<p>Phòng ngủ của Kayako đầy bụi và ẩm mốc, có bàn và giường cũ.</p>`, [
+    { text: "1. Lên giường nghỉ ngơi", action: () => {
+      death("Kayako tức giận với sự thiếu lịch sự của bạn. Cô ta vồ tới và bẻ cổ bạn!");
+    }},
+    { text: "2. Đến bàn xem xét", action: () => {
+      show(`<p>Trên bàn có <b>con dao</b> và <b>cuốn nhật kí</b>.</p>`, [
+        { text: "a) Lấy dao", action: () => {
+          inventory.dao = true;
+          show(`<p class="safe">Bạn đã có dao.</p>`, [{ text: "Trở lại bản đồ", action: map }]);
+        }},
+        { text: "b) Xem nhật kí", action: xemNhatKi },
+      ]);
+    }},
+    { text: "3. Ra khỏi phòng", action: map }
+  ]);
+}
+
+// --- NHẬT KÍ ---
+function xemNhatKi() {
+  inventory.nhatKi = true;
+  show(`<p>Nhật kí có 15 trang. Bạn chỉ mở được 2 trang. Mở trang nào?</p>`, [
+    { text: "Trang 4", action: () => {
+      show(`<p class="safe">"Tủ trên gác mái có gì đó..."</p>`, [
+        { text: "Trở lại bản đồ", action: map }
+      ]);
+    }},
+    { text: "Trang 13", action: () => {
+      inventory.khoa = true;
+      show(`<p class="safe">Bạn tìm thấy <b>CHÌA KHÓA!</b></p>`, [
+        { text: "Trở lại phòng khách", action: thoat }
+      ]);
+    }},
+    { text: "Trang 1", action: () => death("Chữ 'CHẾT' được viết bằng máu. Bạn dính máu và Kayako giết chết bạn.") },
+  ]);
+}
+
+// --- III. PHÒNG CON TRAI ---
+function phongCon() {
+  show(`<p>Phòng của Toshio lạnh lẽo, có thứ gì đó lấp lánh bên trong...</p>`, [
+    { text: "1. Vào trong", action: () => {
+      inventory.dao = true;
+      show(`<p class="safe">Bạn tìm thấy một con dao nhỏ.</p>`, [
+        { text: "Trở lại bản đồ", action: map }
+      ]);
+    }},
+    { text: "2. Trở về", action: map }
+  ]);
+}
+
+// --- IV. PHÒNG TẮM ---
+function phongTam() {
+  show(`<p>Bạn thấy nước máy trông rất sạch, có muốn tắm không?</p>`, [
+    { text: "1. Có", action: () => death("Khi bạn tắm, Toshio trồi lên từ mặt nước và dìm bạn chết đuối.") },
+    { text: "2. Không", action: () => {
+      show(`<p class="safe">Bạn an toàn rời khỏi phòng tắm.</p>`, [
+        { text: "Trở lại bản đồ", action: map }
+      ]);
+    }}
+  ]);
+}
+
+// --- V. GÁC MÁI ---
+function gacMai() {
+  show(`<p>Gác mái lạnh lẽo, có một cái tủ cũ.</p>`, [
+    { text: "1. Mở tủ xem", action: () => {
+      inventory.manhMoi = true;
+      show(`<p class="safe">Bạn nhận được manh mối: "Chìa khóa nằm trong nhật kí."</p>`, [
+        { text: "Trở lại bản đồ", action: map }
+      ]);
+    }},
+    { text: "2. Không xem", action: map }
+  ]);
+}
+
+// --- VI. BẾP ---
+function bep() {
+  show(`<p>Bạn thấy con dao dính máu trên bàn bếp.</p>`, [
+    { text: "1. Lấy dao", action: () => death("Bạn dính máu! Kayako đánh hơi được và giết bạn.") },
+    { text: "2. Không lấy", action: () => {
+      show(`<p class="safe">Bạn an toàn rời khỏi bếp.</p>`, [
+        { text: "Trở lại bản đồ", action: map }
+      ]);
+    }}
+  ]);
+}
+
+// --- VII. PHÒNG CHỒNG ---
+function phongChong() {
+  show(`<p>Phòng lạnh và tối. Bật đèn flash để vào chứ?</p>`, [
+    { text: "1. Có", action: () => death("Cửa đóng lại, điện thoại tắt nguồn. Chồng Kayako túm lấy và xé xác bạn.") },
+    { text: "2. Không", action: map }
+  ]);
+}
+
+// --- THOÁT ---
+function thoat() {
+  if (inventory.khoa && inventory.manhMoi) {
+    show(`<p class="safe">Bạn dùng chìa khóa mở cửa. Ánh sáng tràn vào...</p>
+    <h3 class="safe">🎉 CHÚC MỪNG! BẠN ĐÃ THOÁT KHỎI LỜI NGUYỀN KAYAKO!</h3>`, [
+      { text: "Chơi lại", action: start }
+    ]);
+  } else {
+    show(`<p>Cửa bị khóa, bạn vẫn chưa có đủ manh mối.</p>`, [
+      { text: "Trở lại bản đồ", action: map }
+    ]);
+  }
+}
+
+// --- CHẾT ---
+function death(msg) {
+  alive = false;
+  show(`<p class="dead">${msg}</p><h3 class="dead">💀 BẠN ĐÃ CHẾT</h3>`, [
+    { text: "Chơi lại", action: start }
+  ]);
+}
+
+start();
+</script>
+</body>
+</html>
